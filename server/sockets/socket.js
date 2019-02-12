@@ -10,7 +10,6 @@ io.on('connection', (client) => {
 
     client.on('enterChat', (data, callback) => {
 
-        console.log(data);
         if (!data.name || !data.room) {
             return callback({
                 error: true,
@@ -20,31 +19,34 @@ io.on('connection', (client) => {
 
         client.join(data.room);
 
-        let people = users.addPerson(client.id, data.name, data.room);
+        users.addPerson(client.id, data.name, data.room);
 
-        client.broadcast.emit('peopleList', users.getPeople());
+        client.broadcast.to(data.room).emit('peopleList', users.getPeopleByRoom(data.room));
 
-        callback(people);
+        console.log('Usuarios conectados en ' + data.room + ':\n', users.getPeopleByRoom(data.room));
+
+        callback(users.getPeopleByRoom(data.room));
     });
 
     client.on('createMessage', (data) => {
         let person = users.getPerson(client.id);
 
         let message = createMessage(person.name, data.message);
-        client.broadcast.emit('createMessage', message);
+        client.broadcast.to(person.room).emit('createMessage', message);
     });
 
     client.on('disconnect', () => {
         let deletedPerson = users.deletePerson(client.id);
 
-        client.broadcast.emit('createMessage', createMessage('Administrador', `${deletedPerson.name} salió`));
-        client.broadcast.emit('peopleList', users.getPeople());
+        client.broadcast.to(deletedPerson.room).emit('createMessage', createMessage('Administrador', `${deletedPerson.name} salió`));
+        client.broadcast.to(deletedPerson.room).emit('peopleList', users.getPeopleByRoom(deletedPerson.room));
     });
 
     // Mensajes privados
 
     client.on('privateMessage', data => {
         let person = users.getPerson(client.id);
+        console.log(data);
         client.broadcast.to(data.for).emit('privateMessage', createMessage(person.name, data.message));
     });
 });

@@ -25,7 +25,8 @@ class Users {
     }
 
     getPeopleByRoom(room) {
-        // ...
+        let peopleOnRoom = this.people.filter(person => person.room == room);
+        return peopleOnRoom;
     }
 
     deletePerson(id) {

@@ -6,7 +6,7 @@ const users = new Users();
 
 io.on('connection', (client) => {
 
-    console.log('Usuario conectado');
+    // console.log('Usuario conectado');
 
     client.on('enterChat', (data, callback) => {
 
@@ -22,17 +22,18 @@ io.on('connection', (client) => {
         users.addPerson(client.id, data.name, data.room);
 
         client.broadcast.to(data.room).emit('peopleList', users.getPeopleByRoom(data.room));
-
-        console.log('Usuarios conectados en ' + data.room + ':\n', users.getPeopleByRoom(data.room));
+        client.broadcast.to(data.room).emit('createMessage', createMessage('Administrador', `${data.name} se unió`));
 
         callback(users.getPeopleByRoom(data.room));
     });
 
-    client.on('createMessage', (data) => {
+    client.on('createMessage', (data, callback) => {
         let person = users.getPerson(client.id);
 
         let message = createMessage(person.name, data.message);
         client.broadcast.to(person.room).emit('createMessage', message);
+
+        callback(message);
     });
 
     client.on('disconnect', () => {
